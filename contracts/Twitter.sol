@@ -45,11 +45,8 @@ contract Twitter{
     }
 
     function concatString(string memory a, string memory b, string memory c) internal pure returns(string memory){
-        assembly{
-
-        }
+        return string(abi.encodePacked(a,b,hex"10",c));
     }
-
 
     //register
     function register(string memory username, uint8 age, uint8 gender) public{
@@ -120,13 +117,8 @@ contract Twitter{
 
         //add as new post
         posts[postID] = postObj(now, text, new uint[](0));
-        users[id].posts.push(postID);
+        users[msg.sender].posts.push(postID);
         postID += 1;
     }
-
-
-
-
-
 
 }
