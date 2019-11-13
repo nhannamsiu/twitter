@@ -20,12 +20,14 @@ contract Twitter{
     }
 
     struct tweetObj{
+        uint id;
         uint date;
         string text;
         uint[] comments;
     }
 
     struct commentObj{
+        uint id;
         string username;
         string text;
         uint date;
@@ -71,7 +73,7 @@ contract Twitter{
 
     //tweet
     function tweet(string memory text) public{
-        tweets[tweetID] = tweetObj(now, text, new uint[](0));
+        tweets[tweetID] = tweetObj(tweetID, now, text, new uint[](0));
         users[msg.sender].posts.push(tweetID);
 
         tweetID += 1;
@@ -92,7 +94,7 @@ contract Twitter{
     }
 
     function comment(uint _postID, string memory text) public{
-        comments[commentID] = commentObj(getUsername[msg.sender], text, now);
+        comments[commentID] = commentObj(commentID, getUsername[msg.sender], text, now);
         tweets[_postID].comments.push(commentID);
 
         commentID += 1;
@@ -113,12 +115,12 @@ contract Twitter{
     function retweet(string memory from, uint postIndex) public{
         address id = getAddress[from];
         uint[] memory postIDs = users[id].posts;
-        tweetObj memory tweet = tweets[postIDs[postIndex]];
+        tweetObj memory _tweet = tweets[postIDs[postIndex]];
 
-        string memory text = concatString("Retweet from: ", from, tweet.text);
+        string memory text = concatString("Retweet from: ", from, _tweet.text);
 
         //add as new post
-        tweets[tweetID] = tweetObj(now, text, new uint[](0));
+        tweets[tweetID] = tweetObj(tweetID, now, text, new uint[](0));
         users[msg.sender].posts.push(tweetID);
         tweetID += 1;
     }

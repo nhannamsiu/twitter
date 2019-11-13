@@ -331,8 +331,25 @@ function createMethodInterface(method,arg){
         let username = document.getElementById(method+'param').value
         transactionConfig.from = $('#accountOption :selected').text()
 
-        let comments = await contract.methods.getTweets(username).call(transactionConfig)
-        writeLog("User tweets:\n" + JSON.stringify(tweets,null,2))
+        let tweets = await contract.methods.getTweets(username).call(transactionConfig)
+        writeLog("Tweet from " + username + ":\n")
+        for (tweet of tweets){
+          let tweetID = tweet[0]
+          let comments = await contract.methods.getComments(tweetID).call(transactionConfig)
+
+          //post section
+          writeLog('====================================================')
+          writeLog(username + "[" + tweet[0] + "]")
+          writeLog(new Date(parseInt(tweet[1])*1000).toUTCString())
+          writeLog(tweet[2])
+          //comment section
+          for (comment of comments){
+            writeLog('\t----------------------------------------------------')
+            writeLog('\t' + comment[1])
+            writeLog('\t' + new Date(parseInt(comment[3])*1000).toUTCString())
+            writeLog('\t' + comment[2])
+          }
+        }
       }
       catch(err){
         writeLog(err)
