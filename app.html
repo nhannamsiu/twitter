@@ -373,6 +373,23 @@ function createMethodInterface(method,arg){
       }
     }
   }
+  else if (method=='retweet'){
+    button.onclick = async()=>{
+      writeLog('executing ' + method + ' method...')
+      try{
+        let args = document.getElementById(method+'param').value.split(',')
+        let username = args[0]
+        let postIndex = parseInt(args[1])
+        transactionConfig.from = $('#accountOption :selected').text()
+
+        await contract.methods.retweet(username,postIndex).send(transactionConfig)
+        writeLog("retweet posted")
+      }
+      catch(err){
+        writeLog(err)
+      }
+    }
+  }
 
   //input field for method
   let field = document.createElement('input');
