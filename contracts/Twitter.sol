@@ -10,7 +10,7 @@ contract Twitter{
 
     //Object models
     uint commentID;
-    uint postID;
+    uint tweetID;
 
     struct userObj{
         string username;
@@ -19,7 +19,7 @@ contract Twitter{
         uint[] posts;
     }
 
-    struct postObj{
+    struct tweetObj{
         uint date;
         string text;
         uint[] comments;
@@ -36,7 +36,7 @@ contract Twitter{
     mapping(string=>address) getAddress;
 
     mapping(address=>userObj) users;
-    mapping(uint=>postObj) posts;
+    mapping(uint=>tweetObj) tweets;
     mapping(uint=>commentObj) comments;
 
     //util functions
@@ -45,7 +45,7 @@ contract Twitter{
     }
 
     function concatString(string memory a, string memory b, string memory c) internal pure returns(string memory){
-        return string(abi.encodePacked(a,b,hex"10",c));
+        return string(abi.encodePacked(a,b,hex"0a",c));
     }
 
     //register
@@ -64,26 +64,28 @@ contract Twitter{
     //get profile
     function getProfile(string memory username) public view returns(userObj memory){
       address id = getAddress[username];
+      require(id != NULL_ADDR, "Invalid username");
+
       return users[id];
     }
 
-    //post
-    function post(string memory text) public{
-        posts[postID] = postObj(now, text, new uint[](0));
-        users[msg.sender].posts.push(postID);
+    //tweet
+    function tweet(string memory text) public{
+        tweets[tweetID] = tweetObj(now, text, new uint[](0));
+        users[msg.sender].posts.push(tweetID);
 
-        postID += 1;
+        tweetID += 1;
     }
 
-    //get posts
-    function getPosts(string memory username) public view returns(postObj[] memory){
+    //get tweets
+    function getTweets(string memory username) public view returns(tweetObj[] memory){
         address user = getAddress[username];
         uint[] memory postIDs = users[user].posts;
 
-        postObj[] memory result = new postObj[](postIDs.length);
+        tweetObj[] memory result = new tweetObj[](postIDs.length);
 
         for (uint i=0; i<postIDs.length; i++){
-            result[i] = posts[postIDs[i]];
+            result[i] = tweets[postIDs[i]];
         }
 
         return result;
@@ -91,13 +93,13 @@ contract Twitter{
 
     function comment(uint _postID, string memory text) public{
         comments[commentID] = commentObj(getUsername[msg.sender], text, now);
-        posts[_postID].comments.push(commentID);
+        tweets[_postID].comments.push(commentID);
 
         commentID += 1;
     }
 
     function getComments(uint _postID) public view returns(commentObj[] memory){
-        uint[] memory commentIDs = posts[_postID].comments;
+        uint[] memory commentIDs = tweets[_postID].comments;
 
         commentObj[] memory result = new commentObj[](commentIDs.length);
 
@@ -111,14 +113,14 @@ contract Twitter{
     function retweet(string memory from, uint postIndex) public{
         address id = getAddress[from];
         uint[] memory postIDs = users[id].posts;
-        postObj memory tweet = posts[postIDs[postIndex]];
+        tweetObj memory tweet = tweets[postIDs[postIndex]];
 
         string memory text = concatString("Retweet from: ", from, tweet.text);
 
         //add as new post
-        posts[postID] = postObj(now, text, new uint[](0));
-        users[msg.sender].posts.push(postID);
-        postID += 1;
+        tweets[tweetID] = tweetObj(now, text, new uint[](0));
+        users[msg.sender].posts.push(tweetID);
+        tweetID += 1;
     }
 
 }

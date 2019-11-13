@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>dTwitter</title>
+</head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="app/web3.js"></script>
+<script src="app/config.js"></script>
+<script src="app/artifact.js"></script>
+<body>
+
+<style>
+/* Style the tab */
+.tab {
+  overflow: hidden;
+  border-top: 2px solid grey;
+  background-color: #2D2A2E;
+}
+
+/* Style the buttons inside the tab */
+.tab button {
+  background-color: inherit;
+  color: white;
+  float: right;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 7px 8px;
+  transition: 0.3s;
+  font-size: 14px;
+  width: 10%;
+}
+/* Change background color of buttons on hover */
+.tab button:hover {
+  background-color: grey;
+}
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: grey;
+}
+/* Style the tab content */
+.tabcontent {
+  display: none;
+  padding: 6px 12px;
+  border-top: none;
+}
+pre {
+  font-size: 14px;
+  color: #79f94f;
+  padding: 14px;
+}
+body{
+  background-color: #2D2A2E
+}
+select {
+  width: 95%;
+  padding: 12px 5px;
+  margin: 8px 0px;
+  border: 1px solid #ccc;
+  height: 39px;
+}
+input[type=text], select {
+  width: 95%;
+  padding: 12px 5px;
+  margin: 8px 0px;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+input[type=submit] {
+  width: 95%;
+  background-color: #5CB3F1;
+  color: white;
+  padding: 13px 20px;
+  margin: 8px 0px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+input[type=submit]:hover {
+  background-color: #4182B3;
+}
+input[type=submit]:disabled{
+  border: 1px solid #999999;
+  background-color: #cccccc;
+  color: #666666;
+}
+div {
+  font-family: Arial;
+  color: white;
+  width: 100%;
+  overflow: auto;
+}
+.left {
+  float:left;
+  width: 50%;
+  word-wrap: break-word;
+}
+.right {
+  float: right;
+  width: 50%;
+  word-wrap: break-word;
+}
+.interface{
+  width: 100%;
+  height: auto;
+  word-wrap: break-word;
+}
+.horizontal{
+  width: 100%;
+  height: 40vh;
+  word-wrap: break-word;
+}
+.methodClass{
+  width: 100%;
+  height: 37vh;
+}
+</style>
+
+<div class="interface">
+
+  <div class="left">
+
+    <h2>Configuration</h2>
+
+    <select id="networkOption">
+    <option selected disabled hidden>Select network</option>
+    </select>
+    <select id="accountOption">
+      <option selected disabled hidden>Select account</option>
+    </select>
+
+    <form id="load" method="post">
+       Load at address
+       <input type="text" id="contractAddress" name='contractAddress' value=''>
+       <input type="submit" value="Load">
+    </form>
+
+  </div>
+
+  <div class="right">
+    <h2>Contract Interface</h2>
+    Contract method
+    <div class="methodClass" id="method">
+    </div>
+  </div>
+
+  <div class="tab">
+    <button class="tablinks" onclick="loadTab(event, 'logdiv')" id="logtab">Log</button>
+  </div>
+
+  <div class="tabcontent horizontal" id='logdiv'>
+    <pre id='log'></pre>
+  </div>
+
+  <div id="graph" class="tabcontent horizontal">
+  </div>
+
+</div>
+
+
+<script>
+
+document.getElementById("logtab").click()
+
+//new metamask auth method
+ethereum.enable()
+
+let register = false
+let contract, input, account
+let web3Metamask = web3
+let currentWeb3
+
+parseNetworks()
+
+$('#networkOption').change(async function(){
+    register = false
+    let network = $(this).val()
+    try{
+      currentWeb3 = await config.selectProvider(network)
+    }
+    catch(err){
+      writeLog(err)
+    }
+    //clear old accounts
+    $('#accountOption').empty()
+
+    //load new one
+    currentWeb3.eth.getAccounts((err,accounts)=>{
+      transactionConfig.from = accounts[0]
+      //print to log
+      writeLog('Accounts loaded from network')
+      writeLog(JSON.stringify(accounts))
+      //parse to options
+      for(account of accounts){
+        $('#accountOption')
+        .append($("<option></option>")
+        .attr("value",account).text(account))
+      }
+    })
+})
+
+
+$('#load').submit(async(e)=>{
+  e.preventDefault()
+  let network = $('#networkOption :selected').text()
+  account = $('#accountOption :selected').text()
+  let address = document.getElementById("contractAddress").value
+
+  //load contract instance
+  let abi = artifact.abi
+  contract = new currentWeb3.eth.Contract(abi)
+  contract.options.address = address
+
+  //clear old buttons
+  document.getElementById("method").innerHTML = ''
+
+  //load buttons
+  let methods = getMethodList()
+  addButton(methods)
+  writeLog('Contract loaded successfully')
+})
+
+
+String.prototype.format = function() {
+  a = this
+  for (k in arguments) {
+    a = a.replace("{" + k + "}", arguments[k])
+  }
+  return a
+}
+
+function loadTab(evt, cityName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(cityName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+
+function writeLog(data){
+  document.getElementById("log").innerHTML += "\n" + data + "\n"
+  $("#logdiv").scrollTop($("#logdiv")[0].scrollHeight);
+}
+
+function addButton(methodList){
+  for (key in methodList){
+    let methodDiv = document.getElementById("method")
+
+    let {button,field} = createMethodInterface(key,methodList[key])
+    methodDiv.appendChild(button)
+    methodDiv.appendChild(field)
+    methodDiv.appendChild(document.createElement("br"));
+  }
+}
+
+function createMethodInterface(method,arg){
+  let button = document.createElement('input')
+  button.type = 'button'
+  button.value = method
+  button.style.borderRadius = '4px'
+  button.style.background = '#f65858'
+  button.style.border = 'none'
+  button.style.color = 'white'
+
+  if (method=='register'){
+    button.onclick = async()=>{
+      writeLog('executing ' + method + ' method...')
+      try{
+        let args = document.getElementById(method+'param').value.split(',')
+        let username = args[0]
+        let age = parseInt(args[1])
+        let gender = parseInt(args[2])
+        transactionConfig.from = $('#accountOption :selected').text()
+
+        await contract.methods.register(username,age,gender).send(transactionConfig)
+        writeLog("Successfully registered")
+      }
+      catch(err){
+        writeLog(err)
+      }
+    }
+  }
+  else if (method=='getProfile'){
+    button.onclick = async()=>{
+      writeLog('executing ' + method + ' method...')
+      try{
+        let username = document.getElementById(method+'param').value
+        transactionConfig.from = $('#accountOption :selected').text()
+
+        let data = await contract.methods.getProfile(username).call(transactionConfig)
+        let profile = {
+          username: data[0],
+          age: data[1],
+          gender: data[2],
+          posts: data[3]
+        }
+        writeLog("User profile:\n" + JSON.stringify(profile,null,2))
+      }
+      catch(err){
+        writeLog(err)
+      }
+    }
+  }
+  else if (method=='tweet'){
+    button.onclick = async()=>{
+      writeLog('executing ' + method + ' method...')
+      try{
+        let text = document.getElementById(method+'param').value
+        transactionConfig.from = $('#accountOption :selected').text()
+
+        await contract.methods.tweet(text).send(transactionConfig)
+        writeLog("Tweet posted")
+      }
+      catch(err){
+        writeLog(err)
+      }
+    }
+  }
+  else if (method=='getTweets'){
+    button.onclick = async()=>{
+      writeLog('executing ' + method + ' method...')
+      try{
+        let username = document.getElementById(method+'param').value
+        transactionConfig.from = $('#accountOption :selected').text()
+
+        let comments = await contract.methods.getTweets(username).call(transactionConfig)
+        writeLog("User tweets:\n" + JSON.stringify(tweets,null,2))
+      }
+      catch(err){
+        writeLog(err)
+      }
+    }
+  }
+  else if (method=='comment'){
+    button.onclick = async()=>{
+      writeLog('executing ' + method + ' method...')
+      try{
+        let args = document.getElementById(method+'param').value.split(',')
+        let postID = parseInt(args[0])
+        let text = args[1]
+        transactionConfig.from = $('#accountOption :selected').text()
+
+        await contract.methods.comment(postID,text).send(transactionConfig)
+        writeLog("Comment posted")
+      }
+      catch(err){
+        writeLog(err)
+      }
+    }
+  }
+
+  //input field for method
+  let field = document.createElement('input');
+  field.type = 'text'
+  field.id = method + 'param'
+  field.placeholder = arg
+
+  return {button,field}
+}
+
+function getMethodList(){
+  return {
+    "register": "string memory username, uint8 age, uint8 gender",
+    "getProfile": "string memory username",
+    "tweet": "string memory text",
+    "retweet": "string memory from, uint postIndex",
+    "comment": "uint _postID, string memory text",
+    "getTweets": "string memory username"
+  }
+}
+
+</script>
+</body>
+</html>

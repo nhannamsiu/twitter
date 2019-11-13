@@ -25,19 +25,19 @@ contract('Retweet Test', (accounts) => {
 
   //post some tweets
   it("Post 1st tweet from Alice", async() => {
-    await meta.post('Such a beautiful day', {from: accounts[0]})
+    await meta.tweet('Such a beautiful day', {from: accounts[0]})
   })
 
   it("Post 2nd tweet from Alice", async() => {
-    await meta.post('Anyone wanna hangout on Friday?', {from: accounts[0]})
+    await meta.tweet('Anyone wanna hangout on Friday?', {from: accounts[0]})
   })
 
   it("Post 3rd tweet from Alice", async() => {
-    await meta.post('Adulthood is a trap, kids', {from: accounts[0]})
+    await meta.tweet('Adulthood is a trap, kids', {from: accounts[0]})
   })
 
   it("Post 1st tweet from Bob", async() => {
-    await meta.post('Testing how this works', {from: accounts[1]})
+    await meta.tweet('Testing how this works', {from: accounts[1]})
   })
 
   //Alice retweets Bob
@@ -56,12 +56,12 @@ contract('Retweet Test', (accounts) => {
 
   //get Alice tweets
   it("Get tweets from Alice", async() => {
-    let posts = await meta.getPosts('Alice')
+    let posts = await meta.getTweets('Alice')
     console.log(posts)
   })
 
   it("Get tweets from Bob", async() => {
-    let posts = await meta.getPosts('Bob')
+    let posts = await meta.getTweets('Bob')
     console.log(posts)
   })
 
