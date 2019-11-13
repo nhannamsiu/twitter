@@ -1,6 +1,11 @@
 # twitter
 sample app
 
+**Start ganache**
+```
+ganache-cli -h 0.0.0.0 -p 7777 -d -l 200000000 -g
+```
+
 **Run tests**
 ```
 truffle test

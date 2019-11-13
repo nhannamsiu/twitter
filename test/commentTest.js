@@ -4,7 +4,7 @@ function print(s){
   console.log(s)
 }
 
-// ganache-cli -h 0.0.0.0 -p 7777 -d -l 200000000 -g
+//ganache-cli -h 0.0.0.0 -p 7777 -d -l 200000000 -g
 
 contract('Comment Test', (accounts) => {
   let meta
